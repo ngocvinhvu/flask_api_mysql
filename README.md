@@ -2,9 +2,9 @@
 
 Link: http://34.72.165.174/api/v0/customers
 
-## Endpoint: 
+# Endpoint: 
 
-# method = ['GET', 'POST', 'PUT', 'DELETE']
+## method = ['GET', 'POST', 'PUT', 'DELETE']
 - /api/v0/customers/<customerNumber>
 - /api/v0/employees/<employeeNumber>
 - /api/v0/offices/<officeCode>
@@ -14,7 +14,7 @@ Link: http://34.72.165.174/api/v0/customers
 - /api/v0/productlines/<productLine>
 - /api/v0/products/<productCode>
 
-# GET list of data
+## GET list of data
 - /api/v0/customers # filter_by: country, contactFirstname # sort_by any field
 - /api/v0/employees # filter_by: firstName, reportsTo # sort_by any field
 - /api/v0/offices # filter_by: city, phone # sort_by any field
