@@ -76,6 +76,7 @@ class Product(Resource):
         
         return product.json(), 201
 
+    @jwt_required()
     def delete(self, productCode):
         
         product = ProductModel.find_by_productCode(productCode)
@@ -97,7 +98,6 @@ class Product(Resource):
             product.productLine = data['productLine']
             product.productScale = data['productScale']
             product.productVendor = data['productVendor']
-            product.productCode = data['productCode']
             product.productDescription = data['productDescription']
             product.quantityInStock = data['quantityInStock']
             product.buyPrice = data['buyPrice']
@@ -112,31 +112,37 @@ class ProductList(Resource):
     def get(self):
         page = request.args.get('page', 1, type=int)
         limit = request.args.get('limit', 25, type=int)
-        sort = request.args.get('sort', type=str)
-        filter_productName = request.args.get('productName', type=str)
-        filter_productLine = request.args.get('productLine', type=str)
 
-        if filter_productName and filter_productLine:
-            items = ProductModel.query.filter(ProductModel.productName == filter_productName, ProductModel.productLine == filter_productLine)
-            return {"products": [product.json() for product in items.paginate(page=page, per_page=limit).items]}
+        items = ProductModel.query
 
-        elif filter_productName:
-            items = ProductModel.query.filter(ProductModel.productName == filter_productName)
-            return {"products": [product.json() for product in items.paginate(page=page, per_page=limit).items]}
+        for k, v in request.args.items():
+            if k == 'productCode':
+                items = items.filter_by(productCode=v)
+            if k == 'productLine':
+                items = items.filter_by(productLine=v)
+            if k == 'productScale':
+                items = items.filter_by(productScale=v)
+            if k == 'productVendor':
+                items = items.filter_by(productVendor=v)
+            if k == 'productDescription':
+                items = items.filter_by(productDescription=v)
+            if k == 'quantityInStock':
+                items = items.filter_by(quantityInStock=v)
+            if k == 'buyPrice':
+                items = items.filter_by(buyPrice=v)
+            if k == 'MSRP':
+                items = items.filter_by(MSRP=v)
 
-        elif filter_productLine:
-            items = ProductModel.query.filter(ProductModel.productLine == filter_productLine)
-            return {"products": [product.json() for product in items.paginate(page=page, per_page=limit).items]}
+            if k == 'sort':
+                if ',' in v and '-' in v:
+                    items = items.order_by(desc(v[1: v.find(',')]), v[v.find(',') + 1:])
+                elif ',' in v:
+                    items = items.order_by(v[: v.find(',')].strip(' +'), v[v.find(',') + 1:])
+                elif '-' in v:
+                    items = items.order_by(desc(v.strip('-')))
+                else:
+                    items = items.order_by(v.strip(' +'))
+            else:
+                items = items
 
-        else:
-            items = ProductModel.query.paginate(page=page, per_page=limit)
-            item_list = [product.json() for product in items.items]
-            if sort:
-                try:
-                    if "-" in sort:
-                        return {"product": sorted(item_list, key=lambda x: x[sort.strip('-')], reverse=True)}
-                    else:
-                        return {"product": sorted(item_list, key=lambda x: x[sort.strip(' +')], reverse=False)}
-                except KeyError:
-                    return {"message": "KeyError"}, 400
-            return {"products": [product.json() for product in items.items]}
+        return {"customers": [customer.json() for customer in items.paginate(page=page, per_page=limit).items]}

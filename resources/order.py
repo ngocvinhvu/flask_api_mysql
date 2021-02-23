@@ -93,31 +93,33 @@ class OrderList(Resource):
     def get(self):
         page = request.args.get('page', 1, type=int)
         limit = request.args.get('limit', 25, type=int)
-        sort = request.args.get('sort', type=str)
-        filter_orderDate = request.args.get('orderDate', type=str)
-        filter_requiredDate = request.args.get('requiredDate', type=str)
 
-        if filter_orderDate and filter_requiredDate:
-            items = OrderModel.query.filter(OrderModel.orderDate == filter_orderDate, OrderModel.requiredDate == filter_requiredDate)
-            return {"orders": [order.json() for order in items.paginate(page=page, per_page=limit).items]}
+        items = OrderModel.query
 
-        elif filter_orderDate:
-            items = OrderModel.query.filter(OrderModel.orderDate == filter_orderDate)
-            return {"orders": [order.json() for order in items.paginate(page=page, per_page=limit).items]}
+        for k, v in request.args.items():
+            if k == 'orderNumber':
+                items = items.filter_by(orderNumber=v)
+            if k == 'requiredDate':
+                items = items.filter_by(requiredDate=v)
+            if k == 'shippedDate':
+                items = items.filter_by(shippedDate=v)
+            if k == 'status':
+                items = items.filter_by(status=v)
+            if k == 'orderDate':
+                items = items.filter_by(orderDate=v)
+            if k == 'customerNumber':
+                items = items.filter_by(customerNumber=v)
 
-        elif filter_requiredDate:
-            items = OrderModel.query.filter(OrderModel.requiredDate == filter_requiredDate)
-            return {"orders": [order.json() for order in items.paginate(page=page, per_page=limit).items]}
+            if k == 'sort':
+                if ',' in v and '-' in v:
+                    items = items.order_by(desc(v[1: v.find(',')]), v[v.find(',') + 1:])
+                elif ',' in v:
+                    items = items.order_by(v[: v.find(',')].strip(' +'), v[v.find(',') + 1:])
+                elif '-' in v:
+                    items = items.order_by(desc(v.strip('-')))
+                else:
+                    items = items.order_by(v.strip(' +'))
+            else:
+                items = items
 
-        else:
-            items = OrderModel.query.paginate(page=page, per_page=limit)
-            item_list = [order.json() for order in items.items]
-            if sort:
-                try:
-                    if "-" in sort:
-                        return {"order": sorted(item_list, key=lambda x: x[sort.strip('-')], reverse=True)}
-                    else:
-                        return {"order": sorted(item_list, key=lambda x: x[sort.strip(' +')], reverse=False)}
-                except KeyError:
-                    return {"message": "KeyError"}, 400
-            return {"orders": [order.json() for order in items.items]}
+        return {"customers": [customer.json() for customer in items.paginate(page=page, per_page=limit).items]}

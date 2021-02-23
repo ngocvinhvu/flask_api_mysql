@@ -73,6 +73,7 @@ class Employee(Resource):
         
         return employee.json(), 201
 
+    @jwt_required()
     def delete(self, employeeNumber):
         
         employee = EmployeeModel.find_by_employeeNumber(employeeNumber)
@@ -107,31 +108,37 @@ class EmployeeList(Resource):
     def get(self):
         page = request.args.get('page', 1, type=int)
         limit = request.args.get('limit', 25, type=int)
-        sort = request.args.get('sort', type=str)
-        filter_firstName = request.args.get('firstName', type=str)
-        filter_reportsTo = request.args.get('reportsTo', type=str)
 
-        if filter_firstName and filter_reportsTo:
-            items = EmployeeModel.query.filter(EmployeeModel.firstName == filter_firstName, EmployeeModel.reportsTo == filter_reportsTo)
-            return {"employees": [employee.json() for employee in items.paginate(page=page, per_page=limit).items]}
+        items = EmployeeModel.query
 
-        elif filter_firstName:
-            items = EmployeeModel.query.filter(EmployeeModel.firstName == filter_firstName)
-            return {"employees": [employee.json() for employee in items.paginate(page=page, per_page=limit).items]}
+        for k, v in request.args.items():
+            if k == 'employeeNumber':
+                items = items.filter_by(employeeNumber=v)
+            if k == 'lastName':
+                items = items.filter_by(lastName=v)
+            if k == 'firstName':
+                items = items.filter_by(firstName=v)
+            if k == 'extension':
+                items = items.filter_by(extension=v)
+            if k == 'email':
+                items = items.filter_by(email=v)
+            if k == 'officeCode':
+                items = items.filter_by(officeCode=v)
+            if k == 'reportsTo':
+                items = items.filter_by(reportsTo=v)
+            if k == 'jobTitle':
+                items = items.filter_by(jobTitle=v)
 
-        elif filter_reportsTo:
-            items = EmployeeModel.query.filter(EmployeeModel.reportsTo == filter_reportsTo)
-            return {"employees": [employee.json() for employee in items.paginate(page=page, per_page=limit).items]}
+            if k == 'sort':
+                if ',' in v and '-' in v:
+                    items = items.order_by(desc(v[1: v.find(',')]), v[v.find(',') + 1:])
+                elif ',' in v:
+                    items = items.order_by(v[: v.find(',')].strip(' +'), v[v.find(',') + 1:])
+                elif '-' in v:
+                    items = items.order_by(desc(v.strip('-')))
+                else:
+                    items = items.order_by(v.strip(' +'))
+            else:
+                items = items
 
-        else:
-            items = EmployeeModel.query.paginate(page=page, per_page=limit)
-            item_list = [employee.json() for employee in items.items]
-            if sort:
-                try:
-                    if "-" in sort:
-                        return {"employee": sorted(item_list, key=lambda x: x[sort.strip('-')], reverse=True)}
-                    else:
-                        return {"employee": sorted(item_list, key=lambda x: x[sort.strip(' +')], reverse=False)}
-                except KeyError:
-                    return {"message": "KeyError"}, 400
-            return {"employees": [employee.json() for employee in items.items]}
+        return {"customers": [customer.json() for customer in items.paginate(page=page, per_page=limit).items]}

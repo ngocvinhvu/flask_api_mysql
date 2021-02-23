@@ -1,6 +1,7 @@
 from flask import request
 from flask_restful import Resource, reqparse
 from flask_jwt import jwt_required
+from sqlalchemy import desc
 
 from models.customer import CustomerModel
 
@@ -136,31 +137,47 @@ class CustomerList(Resource):
     def get(self):
         page = request.args.get('page', 1, type=int)
         limit = request.args.get('limit', 25, type=int)
-        sort = request.args.get('sort', type=str)
-        filter_country = request.args.get('country', type=str)
-        filter_contactFirstName = request.args.get('contactFirstName', type=str)
 
-        if filter_country and filter_contactFirstName:
-            items = CustomerModel.query.filter(CustomerModel.country == filter_country, CustomerModel.contactFirstName == filter_contactFirstName)
-            return {"customers": [customer.json() for customer in items.paginate(page=page, per_page=limit).items]}
+        items = CustomerModel.query
 
-        elif filter_country:
-            items = CustomerModel.query.filter(CustomerModel.country == filter_country)
-            return {"customers": [customer.json() for customer in items.paginate(page=page, per_page=limit).items]}
+        for k, v in request.args.items():
+            if k == 'customerNumber':
+                items = items.filter_by(customerNumber=v)
+            if k == 'customerName':
+                items = items.filter_by(customerName=v)
+            if k == 'contactLastName':
+                items = items.filter_by(contactLastName=v)
+            if k == 'contactFirstName':
+                items = items.filter_by(contactFirstName=v)
+            if k == 'phone':
+                items = items.filter_by(phone=v)
+            if k == 'addressLine1':
+                items = items.filter_by(addressLine1=v)
+            if k == 'addressLine2':
+                items = items.filter_by(addressLine2=v)
+            if k == 'city':
+                items = items.filter_by(city=v)
+            if k == 'state':
+                items = items.filter_by(state=v)
+            if k == 'country':
+                items = items.filter_by(country=v)
+            if k == 'salesRepEmployeeNumber':
+                items = items.filter_by(salesRepEmployeeNumber=v)
+            if k == 'creditLimit':
+                items = items.filter_by(creditLimit=v)
+            if k == 'postalCode':
+                items = items.filter_by(postalCode=v)
 
-        elif filter_contactFirstName:
-            items = CustomerModel.query.filter(CustomerModel.contactFirstName == filter_contactFirstName)
-            return {"customers": [customer.json() for customer in items.paginate(page=page, per_page=limit).items]}
+            if k == 'sort':
+                if ',' in v and '-' in v:
+                    items = items.order_by(desc(v[1: v.find(',')]), v[v.find(',') + 1:])
+                elif ',' in v:
+                    items = items.order_by(v[: v.find(',')].strip(' +'), v[v.find(',') + 1:])
+                elif '-' in v:
+                    items = items.order_by(desc(v.strip('-')))
+                elif '+' in v:
+                    items = items.order_by(v.strip(' +'))
+            else:
+                items = items
 
-        else:
-            items = CustomerModel.query.paginate(page=page, per_page=limit)
-            item_list = [customer.json() for customer in items.items]
-            if sort:
-                try:
-                    if "-" in sort:
-                        return {"customer": sorted(item_list, key=lambda x: x[sort.strip('-')], reverse=True)}
-                    else:
-                        return {"customer": sorted(item_list, key=lambda x: x[sort.strip(' +')], reverse=False)}
-                except KeyError:
-                    return {"message": "KeyError"}, 400
-            return {"customers": [customer.json() for customer in items.items]}
+        return {"customers": [customer.json() for customer in items.paginate(page=page, per_page=limit).items]}

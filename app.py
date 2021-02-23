@@ -41,14 +41,14 @@ api.add_resource(Productline, '/api/v0/productlines/<productLine>')
 api.add_resource(Product, '/api/v0/products/<productCode>')
 
 
-api.add_resource(CustomerList, '/api/v0/customers')
-api.add_resource(EmployeeList, '/api/v0/employees')
-api.add_resource(OfficeList, '/api/v0/offices')
-api.add_resource(OrderdetailList, '/api/v0/orderdetails')
-api.add_resource(OrderList, '/api/v0/orders')
-api.add_resource(PaymentList, '/api/v0/payments')
-api.add_resource(ProductlineList, '/api/v0/productlines')
-api.add_resource(ProductList, '/api/v0/products')
+api.add_resource(CustomerList, '/api/v0/customers') # filter_by: country, contactFirstname
+api.add_resource(EmployeeList, '/api/v0/employees') # filter_by: firstName, reportsTo
+api.add_resource(OfficeList, '/api/v0/offices') # filter_by: city, phone
+api.add_resource(OrderdetailList, '/api/v0/orderdetails') # filter_by: productCode, quantityOrdered
+api.add_resource(OrderList, '/api/v0/orders') # filter_by: orderDate, requiredDate
+api.add_resource(PaymentList, '/api/v0/payments') # filter_by: paymentDate, checkNumber
+api.add_resource(ProductlineList, '/api/v0/productlines') # filter_by: textDescription, htmlDescription
+api.add_resource(ProductList, '/api/v0/products') # filter_by: productName, productLine
 
 
 api.add_resource(UserRegister, '/register')

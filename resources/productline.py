@@ -22,7 +22,6 @@ class Productline(Resource):
     )
 
 
-#    @jwt_required()
     def get(self, productLine):
         productline = ProductlineModel.find_by_productLine(productLine)
         if productline:
@@ -45,6 +44,7 @@ class Productline(Resource):
         
         return productline.json(), 201
 
+    @jwt_required()
     def delete(self, productLine):
         
         productline = ProductlineModel.find_by_productLine(productLine)
@@ -75,31 +75,29 @@ class ProductlineList(Resource):
     def get(self):
         page = request.args.get('page', 1, type=int)
         limit = request.args.get('limit', 25, type=int)
-        sort = request.args.get('sort', type=str)
-        filter_textDescription = request.args.get('textDescription', type=str)
-        filter_htmlDescription = request.args.get('htmlDescription', type=str)
 
-        if filter_textDescription and filter_htmlDescription:
-            items = ProductlineModel.query.filter(ProductlineModel.textDescription == filter_textDescription, ProductlineModel.htmlDescription == filter_htmlDescription)
-            return {"productlines": [productline.json() for productline in items.paginate(page=page, per_page=limit).items]}
+        items = ProductlineModel.query
 
-        elif filter_textDescription:
-            items = ProductlineModel.query.filter(ProductlineModel.textDescription == filter_textDescription)
-            return {"productlines": [productline.json() for productline in items.paginate(page=page, per_page=limit).items]}
+        for k, v in request.args.items():
+            if k == 'productLine':
+                items = items.filter_by(productLine=v)
+            if k == 'textDescription':
+                items = items.filter_by(textDescription=v)
+            if k == 'htmlDescription':
+                items = items.filter_by(htmlDescription=v)
+            if k == 'image':
+                items = items.filter_by(image=v)
 
-        elif filter_htmlDescription:
-            items = ProductlineModel.query.filter(ProductlineModel.htmlDescription == filter_htmlDescription)
-            return {"productlines": [productline.json() for productline in items.paginate(page=page, per_page=limit).items]}
+            if k == 'sort':
+                if ',' in v and '-' in v:
+                    items = items.order_by(desc(v[1: v.find(',')]), v[v.find(',') + 1:])
+                elif ',' in v:
+                    items = items.order_by(v[: v.find(',')].strip(' +'), v[v.find(',') + 1:])
+                elif '-' in v:
+                    items = items.order_by(desc(v.strip('-')))
+                else:
+                    items = items.order_by(v.strip(' +'))
+            else:
+                items = items
 
-        else:
-            items = ProductlineModel.query.paginate(page=page, per_page=limit)
-            item_list = [productline.json() for productline in items.items]
-            if sort:
-                try:
-                    if "-" in sort:
-                        return {"productline": sorted(item_list, key=lambda x: x[sort.strip('-')], reverse=True)}
-                    else:
-                        return {"productline": sorted(item_list, key=lambda x: x[sort.strip(' +')], reverse=False)}
-                except KeyError:
-                    return {"message": "KeyError"}, 400
-            return {"productlines": [productline.json() for productline in items.items]}
+        return {"customers": [customer.json() for customer in items.paginate(page=page, per_page=limit).items]}

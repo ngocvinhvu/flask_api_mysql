@@ -99,11 +99,10 @@ class Office(Resource):
             office.phone = data['phone']
             office.addressLine1 = data['addressLine1']
             office.addressLine2 = data['addressLine2']
-            office.officeCode = data['officeCode']
             office.state = data['state']
             office.country = data['country']
             office.postalCode = data['postalCode']
-            office.postalCode = data['territory']
+            office.territory = data['territory']
 
         office.save_to_db()
 
@@ -114,31 +113,39 @@ class OfficeList(Resource):
     def get(self):
         page = request.args.get('page', 1, type=int)
         limit = request.args.get('limit', 25, type=int)
-        sort = request.args.get('sort', type=str)
-        filter_city = request.args.get('city', type=str)
-        filter_phone = request.args.get('phone', type=str)
 
-        if filter_city and filter_phone:
-            items = OfficeModel.query.filter(OfficeModel.city == filter_city, OfficeModel.phone == filter_phone)
-            return {"offices": [office.json() for office in items.paginate(page=page, per_page=limit).items]}
+        items = OfficeModel.query
 
-        elif filter_city:
-            items = OfficeModel.query.filter(OfficeModel.city == filter_city)
-            return {"offices": [office.json() for office in items.paginate(page=page, per_page=limit).items]}
+        for k, v in request.args.items():
+            if k == 'officeCode':
+                items = items.filter_by(officeCode=v)
+            if k == 'city':
+                items = items.filter_by(city=v)
+            if k == 'addressLine1':
+                items = items.filter_by(addressLine1=v)
+            if k == 'addressLine2':
+                items = items.filter_by(addressLine2=v)
+            if k == 'phone':
+                items = items.filter_by(phone=v)
+            if k == 'state':
+                items = items.filter_by(state=v)
+            if k == 'country':
+                items = items.filter_by(country=v)
+            if k == 'territory':
+                items = items.filter_by(territory=v)
+            if k == 'postalCode':
+                items = items.filter_by(postalCode=v)
 
-        elif filter_phone:
-            items = OfficeModel.query.filter(OfficeModel.phone == filter_phone)
-            return {"offices": [office.json() for office in items.paginate(page=page, per_page=limit).items]}
+            if k == 'sort':
+                if ',' in v and '-' in v:
+                    items = items.order_by(desc(v[1: v.find(',')]), v[v.find(',') + 1:])
+                elif ',' in v:
+                    items = items.order_by(v[: v.find(',')].strip(' +'), v[v.find(',') + 1:])
+                elif '-' in v:
+                    items = items.order_by(desc(v.strip('-')))
+                else:
+                    items = items.order_by(v.strip(' +'))
+            else:
+                items = items
 
-        else:
-            items = OfficeModel.query.paginate(page=page, per_page=limit)
-            item_list = [office.json() for office in items.items]
-            if sort:
-                try:
-                    if "-" in sort:
-                        return {"office": sorted(item_list, key=lambda x: x[sort.strip('-')], reverse=True)}
-                    else:
-                        return {"office": sorted(item_list, key=lambda x: x[sort.strip(' +')], reverse=False)}
-                except KeyError:
-                    return {"message": "KeyError"}, 400
-            return {"offices": [office.json() for office in items.items]}
+        return {"customers": [customer.json() for customer in items.paginate(page=page, per_page=limit).items]}

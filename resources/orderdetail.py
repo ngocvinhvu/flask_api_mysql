@@ -89,31 +89,33 @@ class OrderdetailList(Resource):
     def get(self):
         page = request.args.get('page', 1, type=int)
         limit = request.args.get('limit', 25, type=int)
-        sort = request.args.get('sort', type=str)
-        filter_productCode = request.args.get('productCode', type=str)
-        filter_quantityOrdered = request.args.get('quantityOrdered', type=str)
 
-        if filter_productCode and filter_quantityOrdered:
-            items = OrderdetailModel.query.filter(OrderdetailModel.productCode == filter_productCode, OrderdetailModel.quantityOrdered == filter_quantityOrdered)
-            return {"orderdetails": [orderdetail.json() for orderdetail in items.paginate(page=page, per_page=limit).items]}
+        items = OrderdetailModel.query
 
-        elif filter_productCode:
-            items = OrderdetailModel.query.filter(OrderdetailModel.productCode == filter_productCode)
-            return {"orderdetails": [orderdetail.json() for orderdetail in items.paginate(page=page, per_page=limit).items]}
+        for k, v in request.args.items():
+            if k == 'orderNumber':
+                items = items.filter_by(orderNumber=v)
+            if k == 'productCode':
+                items = items.filter_by(productCode=v)
+            if k == 'quantityOrdered':
+                items = items.filter_by(quantityOrdered=v)
+            if k == 'priceEach':
+                items = items.filter_by(priceEach=v)
+            if k == 'orderLineNumber':
+                items = items.filter_by(orderLineNumber=v)
+            if k == 'customerNumber':
+                items = items.filter_by(customerNumber=v)
 
-        elif filter_quantityOrdered:
-            items = OrderdetailModel.query.filter(OrderdetailModel.quantityOrdered == filter_quantityOrdered)
-            return {"orderdetails": [orderdetail.json() for orderdetail in items.paginate(page=page, per_page=limit).items]}
+            if k == 'sort':
+                if ',' in v and '-' in v:
+                    items = items.order_by(desc(v[1: v.find(',')]), v[v.find(',') + 1:])
+                elif ',' in v:
+                    items = items.order_by(v[: v.find(',')].strip(' +'), v[v.find(',') + 1:])
+                elif '-' in v:
+                    items = items.order_by(desc(v.strip('-')))
+                else:
+                    items = items.order_by(v.strip(' +'))
+            else:
+                items = items
 
-        else:
-            items = OrderdetailModel.query.paginate(page=page, per_page=limit)
-            item_list = [orderdetail.json() for orderdetail in items.items]
-            if sort:
-                try:
-                    if "-" in sort:
-                        return {"orderdetail": sorted(item_list, key=lambda x: x[sort.strip('-')], reverse=True)}
-                    else:
-                        return {"orderdetail": sorted(item_list, key=lambda x: x[sort.strip(' +')], reverse=False)}
-                except KeyError:
-                    return {"message": "KeyError"}, 400
-            return {"orderdetails": [orderdetail.json() for orderdetail in items.items]}
+        return {"customers": [customer.json() for customer in items.paginate(page=page, per_page=limit).items]}
