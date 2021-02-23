@@ -5,14 +5,14 @@ Link: http://34.72.165.174/api/v0/customers
 # Endpoint: 
 
 ## method = ['GET', 'POST', 'PUT', 'DELETE']
-- /api/v0/customers/<customerNumber>
-- /api/v0/employees/<employeeNumber>
-- /api/v0/offices/<officeCode>
-- /api/v0/orderdetails/<orderNumber>
-- /api/v0/orders/<orderNumber>
-- /api/v0/payments/<customerNumber>
-- /api/v0/productlines/<productLine>
-- /api/v0/products/<productCode>
+- /api/v0/customers/'customerNumber'
+- /api/v0/employees/'employeeNumber'
+- /api/v0/offices/'officeCode'
+- /api/v0/orderdetails/'orderNumber'
+- /api/v0/orders/'orderNumber'
+- /api/v0/payments/'customerNumber'
+- /api/v0/productlines/'productLine'
+- /api/v0/products/'productCode'
 
 ## GET list of data
 - /api/v0/customers # filter_by: country, contactFirstname # sort_by any field
